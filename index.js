@@ -36,13 +36,15 @@ async function run() {
     client.connect();
 
    const usersCollection = client.db("SportsDB").collection("users");
+   const instructorsCollection = client.db("SportsDB").collection("instructors");
    
-  //  users api
+  //  Users Api
 
 app.get('/users', async(req,res)=>{
   const result  =  await usersCollection.find().toArray();
   res.send(result)
 })
+
   app.post('/users',async(req,res)=>{
     const user = req.body;
     const query = {email: user.email}
@@ -52,10 +54,14 @@ app.get('/users', async(req,res)=>{
     }
     const result = await usersCollection.insertOne(user);
     res.send(result);
-
-
   })
 
+  // Instructors Api
+
+   app.get('/instructors', async(req,res)=>{
+    const result = await instructorsCollection.find().toArray();
+    res.send(result);
+   })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
