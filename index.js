@@ -37,6 +37,7 @@ async function run() {
 
    const usersCollection = client.db("SportsDB").collection("users");
    const instructorsCollection = client.db("SportsDB").collection("instructors");
+   const classesCollection = client.db("SportsDB").collection("classes");
    
   //  Users Api
 
@@ -63,6 +64,11 @@ app.get('/users', async(req,res)=>{
     res.send(result);
    })
 
+  // Classes Api
+  app.get('/classes', async(req,res)=>{
+    const result = await classesCollection.find().toArray();
+    res.send(result);
+  })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
