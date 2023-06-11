@@ -38,8 +38,11 @@ async function run() {
    const usersCollection = client.db("SportsDB").collection("users");
    const instructorsCollection = client.db("SportsDB").collection("instructors");
    const classesCollection = client.db("SportsDB").collection("classes");
+   const cartCollection = client.db("SportsDB").collection("cart");
    
-  //  Users Api
+ // -----------------------------
+  //          Users Api
+  //----------------------------- 
 
 app.get('/users', async(req,res)=>{
   const result  =  await usersCollection.find().toArray();
@@ -57,17 +60,30 @@ app.get('/users', async(req,res)=>{
     res.send(result);
   })
 
-  // Instructors Api
-
+  // -----------------------------
+  //       Instructors Api
+  //----------------------------- 
    app.get('/instructors', async(req,res)=>{
     const result = await instructorsCollection.find().toArray();
     res.send(result);
    })
 
-  // Classes Api
+    // -----------------------------
+    //        classes Api
+    //----------------------------- 
   app.get('/classes', async(req,res)=>{
     const result = await classesCollection.find().toArray();
     res.send(result);
+  })
+
+    // -----------------------------
+    //        Class Cart Api
+    //----------------------------- 
+  app.post('/cart', async(req,res)=>{
+    const selectedClass = req.body;
+    const result = await cartCollection.insertOne(selectedClass);
+    res.send(result);
+    
   })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
