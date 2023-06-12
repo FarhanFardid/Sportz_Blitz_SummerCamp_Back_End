@@ -62,8 +62,22 @@ async function run() {
     const cartCollection = client.db("SportsDB").collection("cart");
 
     // -----------------------------
-    //          Users Api
+    //          Verify Admin
     //-----------------------------
+       const verifyAdmin = async (req, res, next) => {
+        const email = req.decoded.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        if (user?.role !== "admin") {
+          return res
+            .status(403)
+            .send({ error: true, message: "Forbidden Access" });
+        }
+        next();
+      };
+    // -----------------------------
+    //          Users Api
+    //------------------------------
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -90,6 +104,18 @@ async function run() {
     // -----------------------------
     //      Admin role set Api
     //------------------------------
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+
+ 
 
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -106,6 +132,18 @@ async function run() {
     // -----------------------------
     //      Instructor role set Api
     //------------------------------
+    app.get("/users/instructor/:email",verifyJWT, async(req,res)=>{
+      const email = req.params.email;
+      if(req.decoded.email !== email)
+      {
+        res.send({instructor: false});
+      }
+      const query ={email: email};
+      const user = await usersCollection.findOne(query);
+      const result = {instructor: user?.role ==="instructor"};
+      res.send(result) 
+    });
+
     app.patch("/users/instructor/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -145,6 +183,13 @@ async function run() {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+   
+
+    app.post('/classes', verifyJWT, async(req,res)=>{
+      const newClass = req.body;
+      const result = await classesCollection.insertOne(newClass);
+      res.send(result);
+    })
 
     // -----------------------------
     //        Class Cart Api
