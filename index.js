@@ -3,12 +3,10 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
 // JWT
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 
 // dotenv configuration
 require("dotenv").config();
-
-
 
 const cors = require("cors");
 
@@ -39,8 +37,6 @@ app.get("/", (req, res) => {
   res.send("Sports Blitz camp is going on....");
 });
 
-
-
 const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Password}@cluster0.joz6qi9.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -58,85 +54,123 @@ async function run() {
     // await client.connect();
     client.connect();
 
-   const usersCollection = client.db("SportsDB").collection("users");
-   const instructorsCollection = client.db("SportsDB").collection("instructors");
-   const classesCollection = client.db("SportsDB").collection("classes");
-   const cartCollection = client.db("SportsDB").collection("cart");
-   
- // -----------------------------
-  //          Users Api
-  //----------------------------- 
+    const usersCollection = client.db("SportsDB").collection("users");
+    const instructorsCollection = client
+      .db("SportsDB")
+      .collection("instructors");
+    const classesCollection = client.db("SportsDB").collection("classes");
+    const cartCollection = client.db("SportsDB").collection("cart");
 
-app.get('/users', async(req,res)=>{
-  const result  =  await usersCollection.find().toArray();
-  res.send(result)
-})
+    // -----------------------------
+    //          Users Api
+    //-----------------------------
 
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "user already exist" });
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
 
-  app.post('/users',async(req,res)=>{
-    const user = req.body;
-    const query = {email: user.email}
-    const existingUser = await usersCollection.findOne(query);
-    if(existingUser){
-      return res.send({message: "user already exist"})
-    }
-    const result = await usersCollection.insertOne(user);
-    res.send(result);
-  })
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
 
-  // -----------------------------
-  //      Jwt Api
-  //---------------------------
+    // -----------------------------
+    //      Admin role set Api
+    //------------------------------
 
-  app.post('/jwt', async(req,res)=>{
-    const user = req.body;
-    const token = jwt.sign(user,process.env.Access_Token_Secret,{expiresIn:'10h'}) 
-    res.send({token})
-  })
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
 
-  // -----------------------------
-  //       Instructors Api
-  //----------------------------- 
-   app.get('/instructors', async(req,res)=>{
-    const result = await instructorsCollection.find().toArray();
-    res.send(result);
-   })
+    // -----------------------------
+    //      Instructor role set Api
+    //------------------------------
+    app.patch("/users/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "instructor",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // -----------------------------
+    //      Jwt Api
+    //------------------------------
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.Access_Token_Secret, {
+        expiresIn: "10h",
+      });
+      res.send({ token });
+    });
+
+    // -----------------------------
+    //       Instructors Api
+    //-----------------------------
+    app.get("/instructors", async (req, res) => {
+      const result = await instructorsCollection.find().toArray();
+      res.send(result);
+    });
 
     // -----------------------------
     //        classes Api
-    //----------------------------- 
-  app.get('/classes', async(req,res)=>{
-    const result = await classesCollection.find().toArray();
-    res.send(result);
-  })
+    //-----------------------------
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
 
     // -----------------------------
     //        Class Cart Api
-    //----------------------------- 
-  app.post('/cart', async(req,res)=>{
-    const selectedClass = req.body;
-    const result = await cartCollection.insertOne(selectedClass);
-    res.send(result);
-    
-  })
+    //-----------------------------
+    app.post("/cart", async (req, res) => {
+      const selectedClass = req.body;
+      const result = await cartCollection.insertOne(selectedClass);
+      res.send(result);
+    });
 
-  app.get('/cart', async(req,res)=>{
-    const email = req.query.email;
-    if(!email){
-      res.send([])
-    }
-    const query = {email : email}
-    const result = await cartCollection.find(query).toArray();
-    res.send(result);
+    app.get("/cart", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
 
-  })
-
-  app.delete('/cart/:id', async(req,res)=>{
-    const id = req.params.id;
-    const query = {_id : new ObjectId(id)}
-    const result = await cartCollection.deleteOne(query);
-    res.send(result)
-  })
+    app.delete("/cart/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
