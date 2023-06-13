@@ -14,7 +14,10 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
-// Verify JWT
+// ----------------------------------
+//             Verify JWT
+// ----------------------------------
+
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
@@ -37,6 +40,9 @@ app.get("/", (req, res) => {
   res.send("Sports Blitz camp is going on....");
 });
 
+// ----------------------------------
+//             DB Connection
+// ----------------------------------
 const uri = `mongodb+srv://${process.env.DB_User}:${process.env.DB_Password}@cluster0.joz6qi9.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -61,20 +67,22 @@ async function run() {
     const classesCollection = client.db("SportsDB").collection("classes");
     const cartCollection = client.db("SportsDB").collection("cart");
 
-    // -----------------------------
+    // --------------------------------
     //          Verify Admin
-    //-----------------------------
-       const verifyAdmin = async (req, res, next) => {
-        const email = req.decoded.email;
-        const query = { email: email };
-        const user = await usersCollection.findOne(query);
-        if (user?.role !== "admin") {
-          return res
-            .status(403)
-            .send({ error: true, message: "Forbidden Access" });
-        }
-        next();
-      };
+    //----------------------------------
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden Access" });
+      }
+      next();
+    };
+
     // -----------------------------
     //          Users Api
     //------------------------------
@@ -83,6 +91,7 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -104,6 +113,7 @@ async function run() {
     // -----------------------------
     //      Admin role set Api
     //------------------------------
+
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (req.decoded.email !== email) {
@@ -114,8 +124,6 @@ async function run() {
       const result = { admin: user?.role === "admin" };
       res.send(result);
     });
-
- 
 
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -129,19 +137,19 @@ async function run() {
       res.send(result);
     });
 
-    // -----------------------------
+    // ---------------------------------
     //      Instructor role set Api
-    //------------------------------
-    app.get("/users/instructor/:email",verifyJWT, async(req,res)=>{
+    //----------------------------------
+
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      if(req.decoded.email !== email)
-      {
-        res.send({instructor: false});
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
       }
-      const query ={email: email};
+      const query = { email: email };
       const user = await usersCollection.findOne(query);
-      const result = {instructor: user?.role ==="instructor"};
-      res.send(result) 
+      const result = { instructor: user?.role === "instructor" };
+      res.send(result);
     });
 
     app.patch("/users/instructor/:id", async (req, res) => {
@@ -156,9 +164,17 @@ async function run() {
       res.send(result);
     });
 
-    // -----------------------------
-    //      Jwt Api
-    //------------------------------
+        // ------------------------------
+        //       Instructors Api
+        //-------------------------------
+    app.get("/instructors", async (req, res) => {
+      const result = await instructorsCollection.find().toArray();
+      res.send(result);
+    });
+
+          // -----------------------------
+         //      Jwt Api
+         //------------------------------
 
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -168,35 +184,33 @@ async function run() {
       res.send({ token });
     });
 
-    // -----------------------------
-    //       Instructors Api
-    //-----------------------------
-    app.get("/instructors", async (req, res) => {
-      const result = await instructorsCollection.find().toArray();
-      res.send(result);
-    });
+
 
     // -----------------------------
     //        classes Api
     //-----------------------------
+
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
-   
-   app.get("/classes/:id", async(req,res)=>{
-    const id = req.params.id;
-    const query = {_id: new ObjectId(id) }
-    const result = await classesCollection.findOne(query);
-    res.send(result);
-   })
 
-    app.post('/classes', verifyJWT, async(req,res)=>{
+    app.get("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classesCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/classes", verifyJWT, async (req, res) => {
       const newClass = req.body;
       const result = await classesCollection.insertOne(newClass);
       res.send(result);
-    })
-// class status set api
+    });
+    // ----------------------------------
+    //        class status set api
+    // ----------------------------------
+
     app.patch("/classes/approved/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -208,6 +222,8 @@ async function run() {
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+
     app.patch("/classes/denied/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -219,42 +235,46 @@ async function run() {
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    // feedback api
+    // ----------------------------
+    //       Class Feedback api
+    // ----------------------------
     app.patch("/classes/:id", async (req, res) => {
       const id = req.params.id;
       const message = req.body;
-      console.log(id,message)
+      console.log(id, message);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          feedback: message.feedback
+          feedback: message.feedback,
         },
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-
-    // Class Update Api
+     //-------------------------------
+    //          Class Update Api
+    // --------------------------------
     app.patch("/classes/update/:id", async (req, res) => {
       const id = req.params.id;
       const updateClass = req.body;
-      console.log(id,updateClass)
+      console.log(id, updateClass);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
           class_name: updateClass.class_name,
           instructor_name: updateClass.instructor_name,
           instructor_email: updateClass.instructor_email,
-          price: updateClass.price 
+          price: updateClass.price,
         },
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
-    // -----------------------------
+    // -------------------------------
     //        Class Cart Api
-    //-----------------------------
+    //--------------------------------
+
     app.post("/cart", async (req, res) => {
       const selectedClass = req.body;
       const result = await cartCollection.insertOne(selectedClass);
@@ -277,6 +297,8 @@ async function run() {
       const result = await cartCollection.deleteOne(query);
       res.send(result);
     });
+
+    
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
