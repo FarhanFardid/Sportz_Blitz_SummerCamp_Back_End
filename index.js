@@ -184,13 +184,19 @@ async function run() {
       res.send(result);
     });
    
+   app.get("/classes/:id", async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id) }
+    const result = await classesCollection.findOne(query);
+    res.send(result);
+   })
 
     app.post('/classes', verifyJWT, async(req,res)=>{
       const newClass = req.body;
       const result = await classesCollection.insertOne(newClass);
       res.send(result);
     })
-
+// class status set api
     app.patch("/classes/approved/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -213,17 +219,21 @@ async function run() {
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.patch("/classes/feedback/:id", async (req, res) => {
+    // feedback api
+    app.patch("/classes/:id", async (req, res) => {
       const id = req.params.id;
+      const message = req.body;
+      console.log(id,message)
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          feedback: "denied",
+          feedback: message.feedback
         },
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
     // -----------------------------
     //        Class Cart Api
     //-----------------------------
