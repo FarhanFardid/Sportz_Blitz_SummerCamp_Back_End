@@ -234,6 +234,24 @@ async function run() {
       res.send(result);
     });
 
+    // Class Update Api
+    app.patch("/classes/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateClass = req.body;
+      console.log(id,updateClass)
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          class_name: updateClass.class_name,
+          instructor_name: updateClass.instructor_name,
+          instructor_email: updateClass.instructor_email,
+          price: updateClass.price 
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     // -----------------------------
     //        Class Cart Api
     //-----------------------------
