@@ -205,7 +205,7 @@ async function run() {
       const result = await classesCollection.insertOne(newClass);
       res.send(result);
     });
-    
+
     // ----------------------------------
     //        class status set api
     // ----------------------------------
@@ -233,6 +233,27 @@ async function run() {
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+ 
+    // ----------------------------------------------------
+    //        class available seats and enrolled set api
+    // ----------------------------------------------------
+    app.patch("/classes/seats/:id", async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const desiredClass = await classesCollection.findOne(filter)
+      const seats = parseFloat(desiredClass.available_seats)
+      const enrolled = parseFloat(desiredClass.total_enrolled)
+      // console.log(desiredClass);
+    
+      const updateDoc = {
+        $set: {
+          available_seats: seats - 1,
+          total_enrolled: enrolled + 1
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
     // ----------------------------
     //       Class Feedback api
     // ----------------------------
